@@ -7,7 +7,7 @@ import warnings
 warnings.simplefilter("ignore", UserWarning) #In order to remove warnings when computing eigenvalues
 
 @parallel
-def theta_function(period_matrix, vec1, vec2, prec = 664, as_tuple = True):
+def theta_function(period_matrix, vec1, vec2, denom, prec = 664, as_tuple = True):
     if as_tuple:
         a, b, c, d, e, f= period_matrix
         Z = Matrix(a.parent(),[[a,b,c],[b,d,e],[c,e,f]])
@@ -33,8 +33,9 @@ def theta_function(period_matrix, vec1, vec2, prec = 664, as_tuple = True):
     S += 'D = %s;'%d
     S += 'E = %s;'%e
     S += 'F = %s;'%f
-    S += 'bound = %s;' %bound
-    S += 'dig = %s;' %dig
+    S += 'bound = %s;'%bound
+    S += 'dig = %s;'%dig
+    """
     S +='default(realprecision,dig); \
     thetaval(del,eps,a,b,c,d,e,f,bd)= \
     {s=0; t=0; \
@@ -49,6 +50,24 @@ def theta_function(period_matrix, vec1, vec2, prec = 664, as_tuple = True):
                           1/4*del[3]*(del[1]*c+del[2]*e+del[3]*f))+ \
             2*Pi*I*(1/2*i*eps[1]+1/4*del[1]*eps[1]+1/2*j*eps[2]+1/4*del[2]*eps[2]+1/2*k*eps[3]+1/4*del[3]*eps[3]);\
     if(real(t)>cutoff,s = s + exp(t)))));  return(s);}'
+    """
+    S += 'dnm = %s;'%denom
+    S += 'default(realprecision,dig); \
+    thetaval(del,eps,a,b,c,d,e,f,bd,denom)= \
+    {s=0; t=0; \
+    cutoff = -dig*log(10.0)-2*log(bd); \
+    for(i=-bd,bd, \
+        for(j=-bd,bd, \
+            for(k=-bd,bd, \
+                t = Pi*I*(a*i^2 + 2*b*i*j + d*j^2 + 2*c*i*k + 2*e*j*k + f*k^2 + 2*a*del[1]*i/denom + \
+                          2*b*del[2]*i/denom + 2*c*del[3]*i/denom + 2*b*del[1]*j/denom + \
+                          2*d*del[2]*j/denom + 2*del[3]*e*j/denom + 2*c*del[1]*k/denom + \
+                          2*del[2]*e*k/denom + 2*del[3]*f*k/denom + a*del[1]^2/denom^2 + \
+                          2*b*del[1]*del[2]/denom^2 + d*del[2]^2/denom^2 + 2*c*del[1]*del[3]/denom^2 +\
+                          2*del[2]*del[3]*e/denom^2 + del[3]^2*f/denom^2)+ \
+            2*Pi*I*(eps[1]*i/denom + eps[2]*j/denom + eps[3]*k/denom + del[1]*eps[1]/denom^2 +\
+                    del[2]*eps[2]/denom^2 + del[3]*eps[3]/denom^2);\
+    if(real(t)>cutoff,s = s + exp(t)))));  return(s);}'
 
     gp(S)
     V =  'v1 = %s;'%vec1[0]
@@ -59,7 +78,7 @@ def theta_function(period_matrix, vec1, vec2, prec = 664, as_tuple = True):
     V += 'v6= %s;'%vec2[2]
     V+= 'Vec1=[v1,v2,v3];'
     V+= 'Vec2=[v4,v5,v6];'
-    V+= 'thetan=thetaval(Vec1,Vec2,A,B,C,D,E,F,bound);'
+    V+= 'thetan=thetaval(Vec1,Vec2,A,B,C,D,E,F,bound,dnm);'
     gp(V)
     theta=gp.eval('thetan')
     Cec=ComplexField(prec)
