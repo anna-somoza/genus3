@@ -35,23 +35,26 @@ for pp in K.princ_polarized(CMtype):
     Js[0].append(j1)
     Js[1].append(j2)
     
-n = len(Js[0])
-CC = ComplexField(K._prec)
-Coeffs_Hj = [[CC((-1)^k*sum([prod(y) for y in Combinations(Js[i],k)])) for k in range(n+1)] for i in range(2)]
-HJs = map(lambda i : flatten(i.factor())[0:2*len(i.factor()):2], [sum([Coeffs_Hj[i][j].algdep(1).change_ring(QQ).roots()[0][0]*x^(n-j) for j in range(n+1)]) for i in range(2)])
-for case in range(len(HJs[0])):
-    if HJs[0][case].degree() == 1:
-        (j1, j2) = (HJs[0][case].roots()[0][0], HJs[1][case].roots()[0][0])
-        (g2,g3,g4) = find_gs(j1,j2)
-        print 'Case #'+str(case)+':\n (g2, g3, g4) = ('+', '.join([str(g2.factor()),str(g3.factor()),str(g4.factor())])+')'
-    else:
-        KJs = NumberField(HJs[0][case],'a')
-        assert KJs.is_isomorphic(NumberField(HJs[1][case],'b'))
-        if HJs[0][case].change_ring(K).is_irreducible():
-            Fs = K.extension(HJs[0][case],'b').absolute_field('b').optimized_representation()[0].subfields(3)
-            F.<g> = Fs[[fld[0].is_isomorphic(KJs) for fld in Fs].index(True)][0].change_names()
+if K.is_isomorphic(CyclotomicField(9)):
+    print '(g2, g3, g4) = (0, -1, 0)'
+else:     
+    n = len(Js[0])
+    CC = ComplexField(K._prec)
+    Coeffs_Hj = [[CC((-1)^k*sum([prod(y) for y in Combinations(Js[i],k)])) for k in range(n+1)] for i in range(2)]
+    HJs = map(lambda i : flatten(i.factor())[0:2*len(i.factor()):2], [sum([Coeffs_Hj[i][j].algdep(1).change_ring(QQ).roots()[0][0]*x^(n-j) for j in range(n+1)]) for i in range(2)])
+    for case in range(len(HJs[0])):
+        if HJs[0][case].degree() == 1:
+            (j1, j2) = (HJs[0][case].roots()[0][0], HJs[1][case].roots()[0][0])
+            (g2,g3,g4) = find_gs(j1,j2)
+            print 'Case #'+str(case)+':\n (g2, g3, g4) = ('+', '.join([str(g2.factor()),str(g3.factor()),str(g4.factor())])+')'
         else:
-            F.<g> = K.subfields(3)[0][0].change_names()
-        Js_alg = [HJs[i][case].change_ring(F).roots() for i in range(2)]
-        (j1, j2) = (Js_alg[0][0][0], Js_alg[1][0][0])
-        print 'Case #'+str(case)+':\n (j1, j2) = ('+str(j1)+', '+str(j2)+') where '+str(g.minpoly().subs(x = var('g')))
+            KJs = NumberField(HJs[0][case],'a')
+            assert KJs.is_isomorphic(NumberField(HJs[1][case],'b'))
+            if HJs[0][case].change_ring(K).is_irreducible():
+                Fs = K.extension(HJs[0][case],'b').absolute_field('b').optimized_representation()[0].subfields(3)
+                F.<g> = Fs[[fld[0].is_isomorphic(KJs) for fld in Fs].index(True)][0].change_names()
+            else:
+                F.<g> = K.subfields(3)[0][0].change_names()
+            Js_alg = [HJs[i][case].change_ring(F).roots() for i in range(2)]
+            (j1, j2) = (Js_alg[0][0][0], Js_alg[1][0][0])
+            print 'Case #'+str(case)+':\n (j1, j2) = ('+str(j1)+', '+str(j2)+') where '+str(g.minpoly().subs(x = var('g')))

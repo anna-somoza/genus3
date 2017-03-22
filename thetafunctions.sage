@@ -35,22 +35,6 @@ def theta_function(period_matrix, vec1, vec2, denom, prec = 664, as_tuple = True
     S += 'F = %s;'%f
     S += 'bound = %s;'%bound
     S += 'dig = %s;'%dig
-    """
-    S +='default(realprecision,dig); \
-    thetaval(del,eps,a,b,c,d,e,f,bd)= \
-    {s=0; t=0; \
-    cutoff = -dig*log(10.0)-2*log(bd); \
-    for(i=-bd,bd, \
-        for(j=-bd,bd, \
-            for(k=-bd,bd, \
-                t = Pi*I*(i^2*a+i*j*b+i*k*c+1/2*i*(del[1]*a+del[2]*b+del[3]*c)+1/2*del[1]*(i*a+j*b+k*c)+ \
-                          1/4*del[1]*(del[1]*a+del[2]*b+del[3]*c)+i*j*b+j^2*d+j*k*e+1/2*j*(del[1]*b+del[2]*d+del[3]*e)+\
-                          1/2*del[2]*(i*b+j*d+k*e)+1/4*del[2]*(del[1]*b+del[2]*d+del[3]*e)+i*k*c+j*k*e+k^2*f+ \
-                          1/2*k*(del[1]*c+del[2]*e+del[3]*f)+1/2*del[3]*(i*c+j*e+k*f)+ \
-                          1/4*del[3]*(del[1]*c+del[2]*e+del[3]*f))+ \
-            2*Pi*I*(1/2*i*eps[1]+1/4*del[1]*eps[1]+1/2*j*eps[2]+1/4*del[2]*eps[2]+1/2*k*eps[3]+1/4*del[3]*eps[3]);\
-    if(real(t)>cutoff,s = s + exp(t)))));  return(s);}'
-    """
     S += 'dnm = %s;'%denom
     S += 'default(realprecision,dig); \
     thetaval(del,eps,a,b,c,d,e,f,bd,denom)= \
@@ -92,27 +76,42 @@ def theta_function(period_matrix, vec1, vec2, denom, prec = 664, as_tuple = True
 def compute_characteristic_sum_from_set_and_etas(S,eta_dict):
     """
     Given a dictionary of values eta_1, eta_2, ... eta_7 (giving a map eta), computes eta_S = sum_{i in S} eta_i
-    Returns a list [[a,b,c],[d,e,f]]
+    Returns a list [[a,b,c],[d,e,f]], a,b,c,d,e,f are in QQ
     """
     sum = [[0,0,0],[0,0,0]]
     for i in S:
-        sum[0][0] += eta_dict[i][0][0]
-        sum[0][1] += eta_dict[i][1][0]
-        sum[0][2] += eta_dict[i][2][0]
-        sum[1][0] += eta_dict[i][3][0]
-        sum[1][1] += eta_dict[i][4][0]
-        sum[1][2] += eta_dict[i][5][0]
+        sum[0][0] += QQ(ZZ(eta_dict[i][0][0])/2)
+        sum[0][1] += QQ(ZZ(eta_dict[i][1][0])/2)
+        sum[0][2] += QQ(ZZ(eta_dict[i][2][0])/2)
+        sum[1][0] += QQ(ZZ(eta_dict[i][3][0])/2)
+        sum[1][1] += QQ(ZZ(eta_dict[i][4][0])/2)
+        sum[1][2] += QQ(ZZ(eta_dict[i][5][0])/2)
     return sum
 
 
-def theta_from_char_and_list(all_values, characteristic):
+def theta_from_char_and_list(all_values, eta_dict, characteristic):
     """
     inputs:
     the list of all theta values computed already for a given period matrix (outputted by all_thetas)
+    eta_dict
     a vector [[a,b,c],[d,e,f]] obtained via compute_characteristic_sum_from_set_and_etas
     output:
     returns the value of theta[[a,b,c],[d,e,f]](Z)
     """
+    double_char = [[i*2 for i in characteristic[0]],[i*2 for i in characteristic[1]]]
+    reduced_char = [[i % 2 for i in double_char[0]],[i % 2 for i in double_char[1]]]
+    int_vec = [[0,0,0],[0,0,0]]
+    for i in range(2):
+        for j in range(3):
+            int_vec[i][j] = (double_char[i][j] - reduced_char[i][j])/2
+    eta1 = [QQ(ZZ(list(i)[0]))/2 for i in eta_dict[1]]
+    int_list = list(int_vec[0]) + list(int_vec[1])
+    v1 = matrix(QQ,eta1)
+    v2 = matrix(QQ,int_list)
+    J = matrix(ZZ,[[0,0,0,1,0,0],[0,0,0,0,1,0],[0,0,0,0,0,1],[0,0,0,0,0,0],[0,0,0,0,0,0],[0,0,0,0,0,0]])
+    num_mat = v1*J*v2.transpose()
+    num = num_mat[0][0]
+    sign = exp(2*pi*I*num_mat[0][0])
     for pair in all_values:
-        if pair[0] == characteristic:
-            return pair[1]
+        if pair[0] == reduced_char:
+            return sign*pair[1]
