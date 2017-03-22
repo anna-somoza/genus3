@@ -1,4 +1,4 @@
-load('period_matrices_genus3.sage')
+load("https://bitbucket.org/pkilicer/period-matrices-for-genus-3-cm-curves/raw/master/period_matrices_genus3.sage")
 
 def CMPoint(K, CM_type, ideal, xi, prec=None, is_hyperelliptic=False, is_Picard=False):
     """
